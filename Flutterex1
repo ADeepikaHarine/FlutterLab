@@ -1,0 +1,84 @@
+import 'package:flutter/material.dart';
+void main() {
+  runApp(const MyApp());
+}
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Online Course App',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        useMaterial3: true,
+      ),
+      home: const HomePage(),
+    ); }}
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+  final List<Map<String, String>> courses = const [
+    {
+      "title": "Flutter Development",
+      "instructor": "John",
+    },{
+      "title": "Data Science Basics",
+      "instructor": "Sarah",
+    },{
+      "title": "UI/UX Design",
+      "instructor": "David",
+    },{
+      "title": "Machine Learning",
+      "instructor": "Tony",
+    }, ];
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Online Course App"),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: ListView.builder(
+          itemCount: courses.length,
+          itemBuilder: (context, index) {
+            final course = courses[index];
+            return Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              elevation: 3,
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      course["title"]!,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ), ),
+                    const SizedBox(height: 5),
+                    Text(
+                      "Instructor: ${course["instructor"]!}",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[700],
+                      ),),
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ), ),
+                        child: const Text("Enroll Now"),
+                      ), ) ],  ), ),  );}, ), ), );}}
