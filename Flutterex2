@@ -1,0 +1,214 @@
+import 'package:flutter/material.dart';
+void main() {
+  runApp(const MyApp());
+}
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: "Online Course App",
+      theme: ThemeData(
+        primarySwatch: Colors.teal,
+      ),
+      home: const HomePage(),
+    );
+  }
+}
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+class _HomePageState extends State<HomePage> {
+  final List<String> levels = ["All", "Beginner", "Intermediate", "Advanced"];
+  String selectedLevel = "All";
+  String searchQuery = "";
+  final List<Course> courses = const [
+    Course(
+      title: "Flutter for Beginners",
+      instructor: "John",
+      duration: "12h",
+      lessons: 48,
+      rating: 4.7,
+      level: "Beginner",
+      icon: Icons.phone_android,
+    ),
+    Course(
+      title: "Clean Architecture in Flutter",
+      instructor: "Robert",
+      duration: "9h",
+      lessons: 36,
+      rating: 4.6,
+      level: "Intermediate",
+      icon: Icons.architecture,
+    ),
+    Course(
+      title: "Data Science with Python",
+      instructor: "Sarah",
+      duration: "15h",
+      lessons: 60,
+      rating: 4.8,
+      level: "Intermediate",
+      icon: Icons.science,
+    ),
+    Course(
+      title: "UI/UX Design Fundamentals",
+      instructor: "David",
+      duration: "8h",
+      lessons: 30,
+      rating: 4.5,
+      level: "Beginner",
+      icon: Icons.design_services,
+    ),
+    Course(
+      title: "Machine Learning Essentials",
+      instructor: "Tony",
+      duration: "18h",
+      lessons: 72,
+      rating: 4.9,
+      level: "Advanced",
+      icon: Icons.computer,
+    ),
+  ];
+  @override
+  Widget build(BuildContext context) {
+    List<Course> filteredCourses = courses.where((c) {
+      final matchesLevel =
+          selectedLevel == "All" ? true : c.level == selectedLevel;
+      final matchesSearch =
+          c.title.toLowerCase().contains(searchQuery.toLowerCase());
+      return matchesLevel && matchesSearch;
+    }).toList();
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Online Course App - Customized ListView"),
+        backgroundColor: Colors.teal,
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: TextField(
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search),
+                hintText: "Search courses...",
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: Row(
+              children: [
+                const Text(
+                  "Filter by Level: ",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(width: 10),
+                DropdownButton<String>(
+                  value: selectedLevel,
+                  items: levels
+                      .map((level) =>
+                          DropdownMenuItem(value: level, child: Text(level)))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedLevel = value!;
+                    }); }, ),],),),
+          // Expanded ListView
+          Expanded(
+            child: filteredCourses.isEmpty
+                ? const Center(
+                    child: Text(
+                      "No courses found",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                  )
+                : ListView(
+                    padding: const EdgeInsets.all(12),
+                    children: filteredCourses
+                        .map((course) => CourseItem(course: course))
+                        .toList(),
+                  ), ),],), ); }}
+class Course {
+  final String title;
+  final String instructor;
+  final String duration;
+  final int lessons;
+  final double rating;
+  final String level;
+  final IconData icon;
+  const Course({
+    required this.title,
+    required this.instructor,
+    required this.duration,
+    required this.lessons,
+    required this.rating,
+    required this.level,
+    required this.icon,
+  });
+}
+class CourseItem extends StatelessWidget {
+  final Course course;
+  const CourseItem({super.key, required this.course});
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 3,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: Icon(course.icon, size: 40, color: Colors.teal),
+        title:
+            Text(course.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("By ${course.instructor} • ${course.level}"),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                _Stars(rating: course.rating),
+                const SizedBox(width: 6),
+                Text("⭐ ${course.rating}"),
+              ],
+            ),
+            Text("${course.lessons} lessons • ${course.duration}"),
+          ],
+        ),
+        isThreeLine: true,
+        trailing: ElevatedButton(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Enrolled in ${course.title}!")),
+            );
+          },
+          child: const Text("Enroll"),
+        ),), ); }}
+class _Stars extends StatelessWidget {
+  final double rating;
+  const _Stars({required this.rating});
+  @override
+  Widget build(BuildContext context) {
+    final full = rating.floor();
+    final half = (rating - full) >= 0.5 ? 1 : 0;
+    final empty = 5 - full - half;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (int i = 0; i < full; i++)
+          const Icon(Icons.star, size: 16, color: Colors.amber),
+        for (int i = 0; i < half; i++)
+          const Icon(Icons.star_half, size: 16, color: Colors.amber),
+        for (int i = 0; i < empty; i++)
+          const Icon(Icons.star_border, size: 16, color: Colors.amber),
+      ], ); }}
