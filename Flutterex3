@@ -1,0 +1,143 @@
+import 'package:flutter/material.dart';
+void main() {
+  runApp(const MyApp());
+}
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Online Course App',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        useMaterial3: true,
+      ),
+      home: CourseListScreen(),
+    );}}
+class Course {
+  final String title;
+  final String instructor;
+  final String duration;
+  final int lessons;
+  final double rating;
+  final String level;
+  Course({
+    required this.title,
+    required this.instructor,
+    required this.duration,
+    required this.lessons,
+    required this.rating,
+    required this.level,
+  });}
+class CourseListScreen extends StatelessWidget {
+  CourseListScreen({super.key});
+  final List<Course> courses = [
+    Course(
+      title: "Flutter for Beginners",
+      instructor: "John",
+      duration: "12h",
+      lessons: 48,
+      rating: 4.7,
+      level: "Beginner",
+    ),
+    Course(
+      title: "Clean Architecture in Flutter",
+      instructor: "Robert",
+      duration: "9h",
+      lessons: 36,
+      rating: 4.6,
+      level: "Intermediate",
+    ),
+    Course(
+      title: "Data Science with Python",
+      instructor: "Sara",
+      duration: "15h",
+      lessons: 60,
+      rating: 4.8,
+      level: "Intermediate",
+    ),
+    Course(
+      title: "UI/UX Design Fundamentals",
+      instructor: "David",
+      duration: "8h",
+      lessons: 30,
+      rating: 4.5,
+      level: "Beginner",
+    ),
+    Course(
+      title: "Machine Learning Essentials",
+      instructor: "Tony",
+      duration: "18h",
+      lessons: 72,
+      rating: 4.9,
+      level: "Advanced",
+    ), ];
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Available Courses"),
+        backgroundColor: scheme.primary,
+        foregroundColor: Colors.white,
+      ),
+      body: ListView.builder(
+        itemCount: courses.length,
+        itemBuilder: (context, index) {
+          final course = courses[index];
+          return Column(
+            children: [
+              ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: scheme.primaryContainer,
+                  child: const Icon(Icons.school, color: Colors.white),
+                ),
+                title: Text(course.title,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(
+                    "${course.instructor} • ${course.level}\n${course.lessons} lessons • ${course.duration}"),
+                isThreeLine: true,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.star, color: Colors.amber, size: 18),
+                    Text(course.rating.toStringAsFixed(1)),
+                  ],
+                ),
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Tapped on ${course.title}')),
+                  );
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text("Course Details"),
+                      content: Text(
+                        "${course.title}\n"
+                        "Instructor: ${course.instructor}\n"
+                        "Level: ${course.level}\n"
+                        "Lessons: ${course.lessons}\n"
+                        "Duration: ${course.duration}\n"
+                        "Rating: ${course.rating}",
+                      ),
+                      actions: [
+                        TextButton(
+                          child: const Text("OK"),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        TextButton(
+                          child: const Text("Enroll"),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content:
+                                      Text("Enrolled in ${course.title}!")),
+                            ); }, ), ], ), );},
+                onLongPress: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${course.title} long pressed!')),
+                  ); }, ),
+              const Divider(),
+            ], ); },  ),  ); }}
