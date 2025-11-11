@@ -1,0 +1,214 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(const OnlineCourseApp());
+}
+class OnlineCourseApp extends StatelessWidget {
+  const OnlineCourseApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Online Course App (Firestore)',
+      theme: ThemeData(primarySwatch: Colors.indigo),
+      home: const CourseScreen(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+class CourseScreen extends StatefulWidget {
+  const CourseScreen({super.key});
+  @override
+  State<CourseScreen> createState() => _CourseScreenState();
+}
+class _CourseScreenState extends State<CourseScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _instructorController = TextEditingController();
+  final _durationController = TextEditingController();
+  final _categoryController = TextEditingController();
+  String status = "";
+  // Firestore collection
+  final CollectionReference courses =
+      FirebaseFirestore.instance.collection('courses');
+  // Add course to Firestore
+  Future<void> addCourse() async {
+    if (_formKey.currentState != null && _formKey.currentState!.validate()) {
+      String title = _titleController.text;
+      String instructor = _instructorController.text;
+      double duration = double.parse(_durationController.text);
+      String category = _categoryController.text;
+      await courses.add({
+        'title': title,
+        'instructor': instructor,
+        'duration': duration,
+        'category': category,
+        'date': DateTime.now().toString(),
+      });
+      setState(() {
+        status = "✅ Course added successfully!";
+      });
+      _titleController.clear();
+      _instructorController.clear();
+      _durationController.clear();
+      _categoryController.clear();
+    }
+  }
+  // Calculate average duration
+  double calculateAverageDuration(List<QueryDocumentSnapshot> docs) {
+    if (docs.isEmpty) return 0;
+    double total = 0;
+    for (var doc in docs) {
+      total += (doc['duration'] as num);
+    }
+    return total / docs.length;
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Online Course App (Firestore)'),
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Form to Add Courses
+            Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  const Text(
+                    'Add New Course:',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 15),
+                  TextFormField(
+                    controller: _titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Course Title',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Enter title' : null,
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _instructorController,
+                    decoration: const InputDecoration(
+                      labelText: 'Instructor',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Enter instructor name'
+                        : null,
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _durationController,
+                    decoration: const InputDecoration(
+                      labelText: 'Duration (hours)',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Enter duration' : null,
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _categoryController,
+                    decoration: const InputDecoration(
+                      labelText: 'Category (e.g. Flutter, Data Science)',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Enter category' : null,
+                  ),
+                  const SizedBox(height: 15),
+                  ElevatedButton.icon(
+                    onPressed: addCourse,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Course'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.indigo,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    status,
+                    style: const TextStyle(
+                        color: Colors.green, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Course List from Firestore
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: courses.orderBy('date', descending: true).snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final docs = snapshot.data!.docs;
+                  if (docs.isEmpty) {
+                    return const Center(child: Text('No courses found'));
+                  }
+                  double avgDuration = calculateAverageDuration(docs);
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: docs.length,
+                          itemBuilder: (context, index) {
+                            final course = docs[index];
+                            final title = course['title'];
+                            final instructor = course['instructor'];
+                            final duration = course['duration'];
+                            final category = course['category'];
+                            final date = course['date'];
+                            return Card(
+                              elevation: 3,
+                              margin: const EdgeInsets.all(8),
+                              child: ListTile(
+                                title: Text(
+                                  title,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18),
+                                ),
+                                subtitle: Text(
+                                  'Instructor: $instructor\n'
+                                  'Category: $category\n'
+                                  'Duration: ${duration.toString()} hours\n'
+                                  'Date: $date',
+                                ),
+                                trailing: duration > 30
+                                    ? const Icon(Icons.star,
+                                        color: Colors.amber, size: 28)
+                                    : null,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      // Average Duration Section
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        color: Colors.indigo.shade50,
+                        child: Text(
+                          'Average Course Duration: ${avgDuration.toStringAsFixed(1)} hours',
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ), ),  ],   );  },    ), ), ],  ), ),  );  }}
