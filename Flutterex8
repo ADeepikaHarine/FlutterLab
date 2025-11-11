@@ -1,0 +1,222 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(const OnlineCourseApp());
+}
+class OnlineCourseApp extends StatelessWidget {
+  const OnlineCourseApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Online Course App with Firestore Search',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        useMaterial3: true,
+      ),
+      debugShowCheckedModeBanner: false,
+      home: const CourseSearchScreen(),
+    );
+  }
+}
+class CourseSearchScreen extends StatefulWidget {
+  const CourseSearchScreen({super.key});
+  @override
+  State<CourseSearchScreen> createState() => _CourseSearchScreenState();
+}
+class _CourseSearchScreenState extends State<CourseSearchScreen> {
+  final _nameController = TextEditingController();
+  final _instructorController = TextEditingController();
+  final _durationController = TextEditingController();
+  final _categoryController = TextEditingController();
+  String status = '';
+  String errorMessage = '';
+  Map<String, dynamic>? searchResult;
+  // Firestore reference
+  final CollectionReference courses =
+      FirebaseFirestore.instance.collection('courses');
+  // Function to save a new course
+  Future<void> saveCourse() async {
+    if (_nameController.text.isEmpty ||
+        _instructorController.text.isEmpty ||
+        _durationController.text.isEmpty ||
+        _categoryController.text.isEmpty) {
+      setState(() {
+        status = "⚠ Please fill in all fields!";
+      });
+      return;
+    }
+    await courses.add({
+      'name': _nameController.text,
+      'instructor': _instructorController.text,
+      'duration': _durationController.text,
+      'category': _categoryController.text,
+      'created_at': DateTime.now().toString(),
+    });
+    setState(() {
+      status = "✅ Course added successfully!";
+    });
+    _nameController.clear();
+    _instructorController.clear();
+    _durationController.clear();
+    _categoryController.clear();
+  }
+  // Function to search for a course by name
+  Future<void> searchCourse() async {
+    setState(() {
+      searchResult = null;
+      errorMessage = '';
+    });
+    if (_nameController.text.isEmpty) {
+      setState(() {
+        errorMessage = '⚠ Please enter a course name to search.';
+      });
+      return;
+    }
+    final snapshot = await courses
+        .where('name', isEqualTo: _nameController.text)
+        .limit(1)
+        .get();
+    if (snapshot.docs.isEmpty) {
+      setState(() {
+        errorMessage = '❌ No course found with that name.';
+      });
+    } else {
+      setState(() {
+        searchResult = snapshot.docs.first.data() as Map<String, dynamic>;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Online Course App (Firestore + Search)'),
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const Text(
+                "Add / Search Courses",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 15),
+
+              // Course Name
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Course Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Instructor
+              TextField(
+                controller: _instructorController,
+                decoration: const InputDecoration(
+                  labelText: 'Instructor Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Duration
+              TextField(
+                controller: _durationController,
+                decoration: const InputDecoration(
+                  labelText: 'Duration (e.g. 4 weeks)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Category
+              TextField(
+                controller: _categoryController,
+                decoration: const InputDecoration(
+                  labelText: 'Category (e.g. Programming, Design)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: saveCourse,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Course'),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal,
+                        foregroundColor: Colors.white),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: searchCourse,
+                    icon: const Icon(Icons.search),
+                    label: const Text('Search Course'),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              // Status messages
+              Text(
+                status,
+                style: const TextStyle(
+                    color: Colors.green, fontWeight: FontWeight.bold),
+              ),
+              if (errorMessage.isNotEmpty)
+                Text(
+                  errorMessage,
+                  style: const TextStyle(
+                      color: Colors.red, fontWeight: FontWeight.bold),
+                ),
+              // Search Result
+              if (searchResult != null) ...[
+                const SizedBox(height: 20),
+                Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          searchResult!['name'],
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 6),
+                        Text("👨‍🏫 Instructor: ${searchResult!['instructor']}"),
+                        Text("🕒 Duration: ${searchResult!['duration']}"),
+                        Text("📚 Category: ${searchResult!['category']}"),
+                        const SizedBox(height: 6),
+                        Text(
+                          "Added on: ${searchResult!['created_at']}",
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
